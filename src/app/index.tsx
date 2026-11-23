@@ -4,7 +4,7 @@ import { AuthScreen } from '../screens/AuthScreen';
 import { SessionLoader } from '../components/SessionLoader';
 import { useFirebaseUser } from '../auth/useFirebaseUser';
 
-/** Rota inicial: mostra autenticação e leva a sessão ativa para /home. */
+/** Public route: show sign-in, then replace it with /home for active sessions. */
 export default function SignInRoute() {
   const user = useFirebaseUser();
 

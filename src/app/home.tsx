@@ -4,7 +4,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { SessionLoader } from '../components/SessionLoader';
 import { useFirebaseUser } from '../auth/useFirebaseUser';
 
-/** Rota privada: devolve usuários sem sessão para a tela inicial. */
+/** Private route: return signed-out users to the sign-in screen. */
 export default function HomeRoute() {
   const user = useFirebaseUser();
 

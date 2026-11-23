@@ -3,7 +3,7 @@ import { StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 
-/** Layout comum: mesma área segura e sem cabeçalhos nativos nas duas telas. */
+/** Both routes share a safe area and hide native navigation headers. */
 export default function RootLayout() {
   return (
     <SafeAreaProvider>

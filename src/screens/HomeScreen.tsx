@@ -45,6 +45,7 @@ export function HomeScreen({ user }: { user: User }) {
     return () => { active = false; };
   }, [favoritesKey]);
 
+  /** Finish the exit animation before swapping the visible discovery stage. */
   function fadeOutStage(): Promise<void> {
     return new Promise((resolve) => {
       Animated.timing(stageReveal, {
@@ -56,6 +57,7 @@ export function HomeScreen({ user }: { user: User }) {
     });
   }
 
+  /** Keep loading visible briefly so fast responses still produce a readable transition. */
   async function discoverSong() {
     if (loading) return;
     const previousUrl = song?.url;

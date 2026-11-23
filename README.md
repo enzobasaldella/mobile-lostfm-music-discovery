@@ -1,6 +1,6 @@
 # Lost.fm
 
-An Android music-discovery app built for the 2026/2 Mobile Development course project. It combines Firebase Authentication with the Last.fm API to suggest tracks beyond the usual mainstream results.
+An Android music-discovery app built for the 2026/2 Mobile Development course project. It combines Firebase Authentication with the Last.fm API to explore tracks across regional music scenes.
 
 The interface is intentionally small: sign in, tap the central mark, and explore a track. Lost.fm is an independent academic project and is not affiliated with Last.fm.
 
@@ -17,6 +17,26 @@ The interface is intentionally small: sign in, tap the central mark, and explore
 - Sign-out and account deletion in the account menu.
 
 The selection favors tracks with at most 350,000 listeners when Last.fm provides audience data. It does not guarantee that every suggestion is obscure. A country is shown only when MusicBrainz can confirm it; redundant geographic tags are hidden when that country is present.
+
+## System topology
+
+```mermaid
+flowchart LR
+    USER[User] --> APP[Android app]
+    APP -->|Google sign-in| GOOGLE[Google Identity]
+    GOOGLE -->|ID token| APP
+    APP -->|email/password or Google credential| FIREBASE[Firebase Authentication]
+    APP -->|tag.getTopTracks and track.getInfo| LASTFM[Last.fm API]
+    LASTFM -->|track metadata and artist MBID| APP
+    APP -->|artist lookup when MBID exists| MB[MusicBrainz API]
+    MB -->|country when available| APP
+    APP <-->|saved tracks by Firebase UID| STORAGE[(AsyncStorage on device)]
+    APP -->|open track URL| WEB[Last.fm website]
+```
+
+There is no custom backend. Authentication is handled by Firebase; the app calls the music APIs directly. Google sign-in first obtains an ID token, which Firebase then uses to establish the app session. The Last.fm page opens outside the app when the listener taps the headphones button.
+
+For each discovery, the app picks a regional scene, requests 50 tracks from a later chart page (pages 2–5), and inspects up to four random candidates. It prefers a candidate below the listener threshold; otherwise it keeps the least popular candidate it could inspect. `track.getInfo` may add cover art, duration, tags, audience size, and a MusicBrainz artist ID. Missing optional metadata does not prevent a result from being shown.
 
 ## Architecture
 
@@ -114,7 +134,7 @@ On a device, verify both sign-in methods, discovery, reroll, save/remove, the sa
 ## External services and limitations
 
 - [Last.fm API](https://www.last.fm/api): `tag.getTopTracks` and `track.getInfo` provide discovery candidates and metadata.
-- [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API): artist-country lookup when a MusicBrainz artist ID is available.
+- [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API): artist-country lookup when a MusicBrainz artist ID is available. Requests are cached and paced to respect its [one-request-per-second policy](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting).
 - [Firebase Authentication](https://firebase.google.com/docs/auth): account registration and sign-in.
 
 Music availability and metadata depend on external services. Saved tracks are local to one device, and listening happens outside the app on Last.fm. This repository contains source code, not Firebase credentials, an APK, or assignment/presentation files.

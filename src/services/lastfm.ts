@@ -67,6 +67,7 @@ function randomItem<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+/** Drop noisy Last.fm tags and fall back to the discovery scene when needed. */
 function cleanGenres(names: (string | undefined)[], fallback: string): string[] {
   const genres = names
     .filter((name): name is string => !!name)
@@ -82,6 +83,7 @@ export function visibleGenres(song: SongPick): string[] {
   return song.artistCountry ? tags.filter((tag) => !GEOGRAPHIC_TAGS.has(tag.toLowerCase())) : tags;
 }
 
+/** Enrich a known artist MBID without making discovery depend on MusicBrainz. */
 async function getArtistCountry(mbid?: string): Promise<string | undefined> {
   if (!mbid || !/^[a-f0-9-]{36}$/i.test(mbid)) return undefined;
   if (originCache.has(mbid)) return originCache.get(mbid) || undefined;
@@ -94,7 +96,7 @@ async function getArtistCountry(mbid?: string): Promise<string | undefined> {
     const timeout = setTimeout(() => controller.abort(), 4500);
     try {
       const response = await fetch(`${MUSICBRAINZ_ROOT}${mbid}?fmt=json`, {
-        headers: { 'User-Agent': 'LostfmMobile/1.0 (https://github.com/enzobasaldella)' },
+        headers: { 'User-Agent': 'LostfmMobile/1.0.1 (https://github.com/enzobasaldella/mobile-lostfm-music-discovery)' },
         signal: controller.signal,
       });
       if (!response.ok) return undefined;

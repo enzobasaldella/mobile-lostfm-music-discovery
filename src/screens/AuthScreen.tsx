@@ -36,6 +36,7 @@ export function AuthScreen() {
     }
   }
 
+  /** Exchange the Google ID token for a Firebase credential and shared session. */
   async function signInWithGoogle() {
     setBusy(true);
     try {
