@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Lost.fm",
+    "slug": "lost-fm",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/lostfm-mark.png",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "enzo.basaldella.lostfm",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/lostfm-mark.png",
+        "monochromeImage": "./assets/lostfm-mark.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "9ba33861-58d4-4461-95da-3ce61ef1db12"
+      }
+    },
+    "owner": "enzobasaldellas-team"
+  }
+}
