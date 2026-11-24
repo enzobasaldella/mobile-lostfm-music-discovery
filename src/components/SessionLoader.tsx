@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { BrandWordmark } from './Brand';
 import { colors } from '../theme';
 
+/** Hold the screen while Firebase resolves the current authentication state. */
 export function SessionLoader() {
   return (
     <View style={styles.container}>

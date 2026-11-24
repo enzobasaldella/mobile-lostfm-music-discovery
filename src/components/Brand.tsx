@@ -13,6 +13,7 @@ export function BrandWordmark({ width = 158 }: { width?: number }) {
   );
 }
 
+/** Render the transparent mark at the size needed by headers or pulse buttons. */
 export function BrandMark({ size = 36 }: { size?: number }) {
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>

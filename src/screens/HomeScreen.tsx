@@ -19,11 +19,13 @@ export function HomeScreen({ user }: { user: User }) {
   const [favorites, setFavorites] = useState<SongPick[]>([]);
   const [artworkFailed, setArtworkFailed] = useState(false);
   const [stageReveal] = useState(() => new Animated.Value(0));
+  // The Firebase UID separates favorites belonging to different accounts on one device.
   const favoritesKey = `@lostfm/favorites/${user.uid}`;
   const artworkSize = Math.min(width - 112, height < 760 ? height * 0.25 : height * 0.27, 230);
   const liked = !!song && favorites.some((saved) => saved.url === song.url);
   const genreTags = song ? visibleGenres(song) : [];
 
+  // Restart the entrance animation whenever the visible song changes.
   useEffect(() => {
     stageReveal.setValue(0);
     const entrance = Animated.timing(stageReveal, {
@@ -36,6 +38,7 @@ export function HomeScreen({ user }: { user: User }) {
     return () => entrance.stop();
   }, [song?.url, stageReveal]);
 
+  // Restore this user's saved songs from device storage when the screen opens.
   useEffect(() => {
     let active = true;
     AsyncStorage.getItem(favoritesKey).then((stored) => {
@@ -58,7 +61,7 @@ export function HomeScreen({ user }: { user: User }) {
     });
   }
 
-  /** Keep loading visible briefly so fast responses still produce a readable transition. */
+  /** Request a new song, avoid the previous URL, and coordinate the loading transition. */
   async function discoverSong() {
     if (loading) return;
     const previousUrl = song?.url;
@@ -83,6 +86,7 @@ export function HomeScreen({ user }: { user: User }) {
     }
   }
 
+  /** Save or remove the current song locally; restore UI state if storage fails. */
   async function toggleFavorite() {
     if (!song) return;
     const next = liked ? favorites.filter((item) => item.url !== song.url) : [song, ...favorites];
@@ -94,12 +98,14 @@ export function HomeScreen({ user }: { user: User }) {
     }
   }
 
+  /** Open the song's Last.fm page; the API does not supply in-app audio playback. */
   async function openTrack() {
     if (!song) return;
     try { await Linking.openURL(song.url); }
     catch { Alert.alert('Could not open Last.fm', 'Please try again later.'); }
   }
 
+  /** Require confirmation before the irreversible Firebase account deletion. */
   function confirmDeleteAccount() {
     Alert.alert('Delete account?', 'Your Firebase account will be permanently deleted. This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -107,6 +113,7 @@ export function HomeScreen({ user }: { user: User }) {
     ]);
   }
 
+  /** Delete the Firebase user, then clear favorites stored under that user's UID. */
   async function deleteAccount() {
     try {
       await deleteUser(user);
@@ -120,6 +127,7 @@ export function HomeScreen({ user }: { user: User }) {
     }
   }
 
+  /** End the Firebase session; the auth listener redirects to the sign-in route. */
   async function signOutAccount() {
     try { await signOut(getAuth()); }
     catch { Alert.alert('Could not sign out', 'Please try again.'); }
@@ -203,7 +211,7 @@ export function HomeScreen({ user }: { user: User }) {
   );
 }
 
-/** The same tactile mark drives both the first discovery and subsequent ones. */
+/** Animate the shared discovery button; compact mode is used on a result. */
 function PulseButton({ onPress, loading, compact = false }: { onPress: () => void; loading: boolean; compact?: boolean }) {
   const [pulse] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -221,12 +229,14 @@ function PulseButton({ onPress, loading, compact = false }: { onPress: () => voi
   </View>;
 }
 
+/** Display valid milliseconds as m:ss without inventing a missing duration. */
 function formatDuration(milliseconds?: number): string {
   if (!milliseconds) return 'Unknown';
   const seconds = Math.floor(milliseconds / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+/** Make a Last.fm tag readable without changing its underlying meaning. */
 function formatGenre(genre: string): string {
   const clean = genre.replace(/^#+/, '').replace(/_/g, ' ').trim();
   return clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Unknown genre';

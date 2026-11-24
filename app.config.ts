@@ -3,6 +3,7 @@ import type { ExpoConfig, ConfigContext } from 'expo/config';
 // app.config.ts runs in Node; avoid a project-wide Node type dependency.
 declare const process: { env: Record<string, string | undefined> };
 
+/** Combine app.json with Android identity, native plugins, and build-time values. */
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Lost.fm',

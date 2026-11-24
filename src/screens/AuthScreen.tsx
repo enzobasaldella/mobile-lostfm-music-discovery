@@ -15,11 +15,13 @@ export function AuthScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Configure Google's native sign-in with the project's OAuth Web client ID.
   useEffect(() => {
     const webClientId = Constants.expoConfig?.extra?.googleWebClientId as string | undefined;
     if (webClientId) GoogleSignin.configure({ webClientId });
   }, []);
 
+  /** Register or sign in with Firebase according to the selected form mode. */
   async function submitEmail() {
     if (!email.trim() || !password) {
       Alert.alert('Missing details', 'Enter your email and password.');
@@ -80,6 +82,7 @@ export function AuthScreen() {
   );
 }
 
+/** Convert common Firebase error codes into useful messages for the form. */
 function readableAuthError(error: unknown): string {
   const code = (error as { code?: string })?.code;
   const messages: Record<string, string> = {

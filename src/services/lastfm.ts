@@ -42,6 +42,7 @@ type TrackInfoResponse = {
   };
 };
 
+/** Data passed from the discovery service to the UI and local favorites. */
 export type SongPick = {
   title: string;
   artist: string;
@@ -54,21 +55,24 @@ export type SongPick = {
   artistCountry?: string;
 };
 
+/** Last.fm durations are milliseconds; zero or invalid values mean unavailable. */
 function validDuration(value: string | number | undefined): number | undefined {
   const milliseconds = Number(value);
   return Number.isFinite(milliseconds) && milliseconds > 0 ? milliseconds : undefined;
 }
 
+/** Prefer the largest usable cover URL in Last.fm's image list. */
 function largestImage(images: LastFmImage[] | undefined): string | undefined {
   return images?.find((image) => image.size === 'extralarge' && image['#text'])?.['#text']
     || images?.find((image) => image.size === 'large' && image['#text'])?.['#text'];
 }
 
+/** Select one tag from a non-empty list using a random index. */
 function randomItem<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-/** Drop noisy Last.fm tags and fall back to the discovery scene when needed. */
+/** Normalize, deduplicate, and limit tags; use the chart scene if details are absent. */
 function cleanGenres(names: (string | undefined)[], fallback: string): string[] {
   const genres = names
     .filter((name): name is string => !!name)
@@ -87,7 +91,7 @@ export function visibleGenres(song: SongPick): string[] {
   return nonGeographic.length ? nonGeographic : song.scene ? [song.scene] : tags;
 }
 
-/** Enrich a known artist MBID without making discovery depend on MusicBrainz. */
+/** Look up an artist's country by MBID; cache and rate-limit this optional request. */
 async function getArtistCountry(mbid?: string): Promise<string | undefined> {
   if (!mbid || !/^[a-f0-9-]{36}$/i.test(mbid)) return undefined;
   if (originCache.has(mbid)) return originCache.get(mbid) || undefined;
@@ -120,7 +124,7 @@ async function getArtistCountry(mbid?: string): Promise<string | undefined> {
   }
 }
 
-/** Discover below the first chart page; avoid very popular tracks when metadata permits. */
+/** Query a regional Last.fm chart, enrich candidates, and return one display-ready song. */
 export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
   const apiKey = Constants.expoConfig?.extra?.lastFmApiKey as string | undefined;
   if (!apiKey) throw new Error('The Last.fm API key is not configured.');
@@ -132,12 +136,14 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
   if (!response.ok) throw new Error(`Last.fm returned status ${response.status}.`);
   let data = (await response.json()) as TopTracksResponse;
   if (data.error) throw new Error(data.message || 'Last.fm could not find tracks right now.');
+  // Some tags have fewer chart pages than requested; page two is the first fallback.
   if (!data.tracks?.track?.length && page !== '2') {
     params.set('page', '2');
     const fallback = await fetch(`${API_ROOT}?${params.toString()}`);
     if (fallback.ok) data = (await fallback.json()) as TopTracksResponse;
   }
 
+  // A usable result needs a title, artist, and link, and should differ from the last pick.
   const candidates = (data.tracks?.track ?? []).filter(
     (track) => track.name && track.url && track.url !== excludeUrl &&
       (typeof track.artist === 'string' ? track.artist : track.artist?.name),
@@ -146,7 +152,7 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
   const scene = data.tracks?.['@attr']?.tag || tag;
 
   let best: { song: SongPick; listeners: number; mbid?: string } | undefined;
-  // Metadata is sparse on Last.fm. Try a few tracks; keep the least popular fallback.
+  // Inspect at most four candidates and keep the least popular usable fallback.
   for (let attempt = 0; attempt < Math.min(4, candidates.length); attempt++) {
     const index = Math.floor(Math.random() * candidates.length);
     const track = candidates.splice(index, 1)[0];
@@ -163,6 +169,7 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
     let listeners = Number.POSITIVE_INFINITY;
     let mbid = typeof track.artist === 'string' ? undefined : track.artist.mbid;
     try {
+      // track.getInfo can add cover, duration, tags, listener count, and artist MBID.
       const infoParams = new URLSearchParams({ method: 'track.getInfo', artist, track: track.name, api_key: apiKey, format: 'json' });
       const infoResponse = await fetch(`${API_ROOT}?${infoParams.toString()}`);
       if (infoResponse.ok) {
@@ -183,6 +190,7 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
   }
 
   const selected = best!;
+  // Country is supplementary: a missing MBID or failed lookup leaves the song usable.
   selected.song.artistCountry = await getArtistCountry(selected.mbid);
   return selected.song;
 }
