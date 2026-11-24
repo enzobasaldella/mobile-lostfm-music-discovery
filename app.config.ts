@@ -7,7 +7,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Lost.fm',
   slug: 'lost-fm',
-  version: '1.0.1',
+  version: '1.0.2',
+  githubUrl: 'https://github.com/enzobasaldella/mobile-lostfm-music-discovery',
   platforms: ['android'],
   orientation: 'portrait',
   userInterfaceStyle: 'dark',
@@ -15,7 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/lostfm-mark.png',
   android: {
     ...config.android,
-    versionCode: 2,
+    versionCode: 3,
     package: 'enzo.basaldella.lostfm',
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './google-services.json',
     adaptiveIcon: {

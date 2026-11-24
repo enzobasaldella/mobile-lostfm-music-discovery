@@ -11,12 +11,12 @@ The interface is intentionally small: sign in, tap the central mark, and explore
 
 - Email/password and Google sign-in with Firebase Authentication;
 - Discovery across music scenes from different regions, with selection beyond the first page of Last.fm tag results;
-- Cover art, title, artist, duration, genre tags, and verified artist country when available;
+- Title, artist, and a Last.fm tag on every discovery; cover art, duration, and verified artist country when available;
 - A three-control result view: save, discover another track, or open Last.fm;
 - Saved tracks stored locally on the device and separated by Firebase user;
 - Sign-out and account deletion in the account menu.
 
-The selection favors tracks with at most 350,000 listeners when Last.fm provides audience data. It does not guarantee that every suggestion is obscure. A country is shown only when MusicBrainz can confirm it; redundant geographic tags are hidden when that country is present.
+The selection favors tracks with at most 350,000 listeners when Last.fm provides audience data. It does not guarantee that every suggestion is obscure. A country is shown only when MusicBrainz can confirm it; redundant geographic tags are hidden when other tags are available.
 
 ## System topology
 
@@ -36,7 +36,7 @@ flowchart LR
 
 There is no custom backend. Authentication is handled by Firebase; the app calls the music APIs directly. Google sign-in first obtains an ID token, which Firebase then uses to establish the app session. The Last.fm page opens outside the app when the listener taps the headphones button.
 
-For each discovery, the app picks a regional scene, requests 50 tracks from a later chart page (pages 2–5), and inspects up to four random candidates. It prefers a candidate below the listener threshold; otherwise it keeps the least popular candidate it could inspect. `track.getInfo` may add cover art, duration, tags, audience size, and a MusicBrainz artist ID. Missing optional metadata does not prevent a result from being shown.
+For each discovery, the app picks a regional scene, requests 50 tracks from a later chart page (pages 2–5), and inspects up to four random candidates. It prefers a candidate below the listener threshold; otherwise it keeps the least popular candidate it could inspect. `track.getInfo` may add cover art, duration, tags, audience size, and a MusicBrainz artist ID. The result always presents three Last.fm response values: track title, artist name, and a tag (track tag when available, otherwise the chart's scene tag). Missing optional metadata does not prevent a result from being shown.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ For each discovery, the app picks a regional scene, requests 50 tracks from a la
 | `src/app/` | Expo Router entry and authenticated home route. |
 | `src/screens/` | Sign-in and discovery interfaces. |
 | `src/auth/` | Firebase session state. |
-| `src/services/lastfm.ts` | Track selection, Last.fm requests, and MusicBrainz country lookup. |
+| `src/services/lastfm.ts` | Track selection, Last.fm requests, tag fallback, and MusicBrainz country lookup. |
 | `src/components/` | Shared brand and loading components. |
 | `assets/` | App identity and fallback artwork. |
 
@@ -111,7 +111,7 @@ npm run typecheck
 npx expo-doctor
 ```
 
-On a device, verify both sign-in methods, discovery, reroll, save/remove, the saved-track panel, and the Last.fm link. If track metadata is incomplete, the app uses a fallback cover or displays an unknown duration rather than inventing data.
+On a device, verify both sign-in methods, discovery, reroll, save/remove, the saved-track panel, account deletion, sign-out, and the Last.fm link. If track metadata is incomplete, the app uses the chart tag, a fallback cover, or an unknown duration rather than inventing track details.
 
 ## Project structure
 

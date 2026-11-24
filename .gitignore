@@ -48,15 +48,3 @@ GoogleService-Info.plist
 # local development-agent configuration
 .claude/
 AGENTS.md
-
-# superseded Expo template artwork and generator
-assets/android-icon-background.png
-assets/android-icon-foreground.png
-assets/android-icon-monochrome.png
-assets/favicon.png
-assets/icon.png
-assets/splash-icon.png
-scripts/generate-brand-assets.mjs
-
-# template license is not a license for this app
-LICENSE

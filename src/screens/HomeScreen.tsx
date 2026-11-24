@@ -88,7 +88,10 @@ export function HomeScreen({ user }: { user: User }) {
     const next = liked ? favorites.filter((item) => item.url !== song.url) : [song, ...favorites];
     setFavorites(next);
     try { await AsyncStorage.setItem(favoritesKey, JSON.stringify(next)); }
-    catch { Alert.alert('Could not save this track', 'Please try again.'); }
+    catch {
+      setFavorites(favorites);
+      Alert.alert('Could not save this track', 'Please try again.');
+    }
   }
 
   async function openTrack() {
@@ -105,12 +108,21 @@ export function HomeScreen({ user }: { user: User }) {
   }
 
   async function deleteAccount() {
-    try { await deleteUser(user); }
+    try {
+      await deleteUser(user);
+      // Favorites belong to this Firebase UID; remove them with the deleted account.
+      await AsyncStorage.removeItem(favoritesKey).catch(() => {});
+    }
     catch (error) {
       const code = (error as { code?: string })?.code;
       Alert.alert(code === 'auth/requires-recent-login' ? 'Sign in again' : 'Could not delete account',
         code === 'auth/requires-recent-login' ? 'For security, sign out and sign in again before deleting your account.' : error instanceof Error ? error.message : 'Please try again.');
     }
+  }
+
+  async function signOutAccount() {
+    try { await signOut(getAuth()); }
+    catch { Alert.alert('Could not sign out', 'Please try again.'); }
   }
 
   return (
@@ -180,7 +192,7 @@ export function HomeScreen({ user }: { user: User }) {
             ) : (
               <View>
                 <Text style={styles.accountEmail}>{user.email || 'Signed in with Google'}</Text>
-                <Pressable accessibilityRole="button" onPress={() => signOut(getAuth())} style={styles.accountAction}><Text style={styles.accountActionText}>Sign out</Text><Text style={styles.actionArrow}>›</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={signOutAccount} style={styles.accountAction}><Text style={styles.accountActionText}>Sign out</Text><Text style={styles.actionArrow}>›</Text></Pressable>
                 <Pressable accessibilityRole="button" onPress={confirmDeleteAccount} style={styles.accountAction}><Text style={styles.deleteText}>Delete account</Text><Text style={styles.actionArrow}>›</Text></Pressable>
               </View>
             )}

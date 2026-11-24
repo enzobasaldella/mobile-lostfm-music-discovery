@@ -30,7 +30,7 @@ type LastFmTrack = {
 type TopTracksResponse = {
   error?: number;
   message?: string;
-  tracks?: { track?: LastFmTrack[] };
+  tracks?: { track?: LastFmTrack[]; '@attr'?: { tag?: string } };
 };
 type TrackInfoResponse = {
   track?: {
@@ -50,6 +50,7 @@ export type SongPick = {
   durationMs?: number;
   genres: string[];
   genre?: string; // Older saved tracks used a single genre.
+  scene?: string; // Last.fm chart tag, also used when track-level tags are missing.
   artistCountry?: string;
 };
 
@@ -77,10 +78,13 @@ function cleanGenres(names: (string | undefined)[], fallback: string): string[] 
   return [...new Set(genres.length ? genres : safeFallback)].slice(0, 3);
 }
 
-/** Once the artist's country is known, a location tag adds no useful context. */
+/** Hide redundant location tags unless that would leave the result without a tag. */
 export function visibleGenres(song: SongPick): string[] {
   const tags = cleanGenres(song.genres?.length ? song.genres : song.genre ? [song.genre] : [], '');
-  return song.artistCountry ? tags.filter((tag) => !GEOGRAPHIC_TAGS.has(tag.toLowerCase())) : tags;
+  if (!song.artistCountry) return tags;
+  const nonGeographic = tags.filter((tag) => !GEOGRAPHIC_TAGS.has(tag.toLowerCase()));
+  // The chart tag comes from Last.fm and remains visible when track tags are only geographic.
+  return nonGeographic.length ? nonGeographic : song.scene ? [song.scene] : tags;
 }
 
 /** Enrich a known artist MBID without making discovery depend on MusicBrainz. */
@@ -96,7 +100,7 @@ async function getArtistCountry(mbid?: string): Promise<string | undefined> {
     const timeout = setTimeout(() => controller.abort(), 4500);
     try {
       const response = await fetch(`${MUSICBRAINZ_ROOT}${mbid}?fmt=json`, {
-        headers: { 'User-Agent': 'LostfmMobile/1.0.1 (https://github.com/enzobasaldella/mobile-lostfm-music-discovery)' },
+        headers: { 'User-Agent': 'LostfmMobile/1.0.2 (https://github.com/enzobasaldella/mobile-lostfm-music-discovery)' },
         signal: controller.signal,
       });
       if (!response.ok) return undefined;
@@ -139,6 +143,7 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
       (typeof track.artist === 'string' ? track.artist : track.artist?.name),
   );
   if (!candidates.length) throw new Error('No tracks were returned. Please try again.');
+  const scene = data.tracks?.['@attr']?.tag || tag;
 
   let best: { song: SongPick; listeners: number; mbid?: string } | undefined;
   // Metadata is sparse on Last.fm. Try a few tracks; keep the least popular fallback.
@@ -152,7 +157,8 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
       url: track.url!,
       artworkUrl: largestImage(track.image),
       durationMs: validDuration(track.duration),
-      genres: cleanGenres([], tag),
+      genres: cleanGenres([], scene),
+      scene,
     };
     let listeners = Number.POSITIVE_INFINITY;
     let mbid = typeof track.artist === 'string' ? undefined : track.artist.mbid;
@@ -164,7 +170,7 @@ export async function getSurpriseSong(excludeUrl?: string): Promise<SongPick> {
         const info = details.track;
         song.artworkUrl = largestImage(info?.album?.image) || song.artworkUrl;
         song.durationMs = validDuration(info?.duration) || song.durationMs;
-        song.genres = cleanGenres(info?.toptags?.tag?.map((item) => item.name) || [], tag);
+        song.genres = cleanGenres(info?.toptags?.tag?.map((item) => item.name) || [], scene);
         mbid = info?.artist?.mbid || mbid;
         const count = Number(info?.listeners);
         if (Number.isFinite(count) && count > 0) listeners = count;
