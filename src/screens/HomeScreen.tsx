@@ -14,6 +14,7 @@ export function HomeScreen({ user }: { user: User }) {
   const { width, height } = useWindowDimensions();
   const [song, setSong] = useState<SongPick | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasDiscovered, setHasDiscovered] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
   const [favorites, setFavorites] = useState<SongPick[]>([]);
   const [artworkFailed, setArtworkFailed] = useState(false);
@@ -61,6 +62,7 @@ export function HomeScreen({ user }: { user: User }) {
   async function discoverSong() {
     if (loading) return;
     const previousUrl = song?.url;
+    setHasDiscovered(true);
     setLoading(true);
     try {
       if (song) {
@@ -131,6 +133,10 @@ export function HomeScreen({ user }: { user: User }) {
         }]}>
         {!song ? (
           <View style={styles.discovery}>
+            {!hasDiscovered && !loading ? <View style={styles.welcome}>
+              <Text style={styles.welcomeTitle}>Welcome to Lost.fm.</Text>
+              <Text style={styles.welcomeSubtitle}>Ready to discover something new?</Text>
+            </View> : null}
             <PulseButton onPress={discoverSong} loading={loading} />
             <Text style={styles.pulseCaption}>{loading ? 'Finding your next track' : 'Tap to find out'}</Text>
           </View>
@@ -222,7 +228,10 @@ const styles = StyleSheet.create({
   headerButton: { width: 38, height: 44, alignItems: 'center', justifyContent: 'center' },
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 0 },
   stageContent: { width: '100%', alignItems: 'center', justifyContent: 'center' },
-  discovery: { alignItems: 'center', justifyContent: 'center', marginTop: -12 },
+  discovery: { width: '100%', maxWidth: 320, alignItems: 'center', justifyContent: 'center', marginTop: -26 },
+  welcome: { position: 'absolute', top: -83, left: 0, right: 0, alignItems: 'center' },
+  welcomeTitle: { color: colors.text, fontFamily, fontSize: 22, fontWeight: '700', letterSpacing: -0.4, textAlign: 'center' },
+  welcomeSubtitle: { color: colors.muted, fontFamily, fontSize: 14, textAlign: 'center', marginTop: 6 },
   pulseArea: { width: 276, height: 276, alignItems: 'center', justifyContent: 'center' },
   pulseAreaCompact: { width: 136, height: 136 },
   outerRing: { width: 268, height: 268, borderRadius: 134, borderWidth: 1, borderColor: '#717171', position: 'absolute' },
