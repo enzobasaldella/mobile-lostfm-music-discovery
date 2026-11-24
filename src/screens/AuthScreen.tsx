@@ -75,7 +75,6 @@ export function AuthScreen() {
             <Text style={styles.switchText}>{mode === 'login' ? 'New here?  ' : 'Already have an account?  '}<Text style={styles.switchAction}>{mode === 'login' ? 'Create account' : 'Sign in'}</Text></Text>
           </Pressable>
         </View>
-        <Text style={styles.credit}>Powered by Last.fm</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -114,5 +113,4 @@ const styles = StyleSheet.create({
   switch: { alignItems: 'center', paddingTop: 29, paddingBottom: 8 },
   switchText: { color: colors.muted, fontFamily, fontSize: 13 },
   switchAction: { color: colors.text, fontWeight: '700' },
-  credit: { color: colors.subtle, fontFamily, fontSize: 11, textAlign: 'center', letterSpacing: 0.2 },
 });
